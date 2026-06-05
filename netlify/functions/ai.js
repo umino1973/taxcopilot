@@ -1,7 +1,6 @@
 exports.handler = async (event) => {
   try {
-
-    // Consenti solo POST
+    // 🔒 Solo POST
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
@@ -9,70 +8,77 @@ exports.handler = async (event) => {
       };
     }
 
-    // Parse body in sicurezza
-    const body = event.body ? JSON.parse(event.body) : {};
-    const idea = body.idea || "";
+    // 📦 Parse body
+    let body;
+    try {
+      body = event.body ? JSON.parse(event.body) : {};
+    } catch (e) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Invalid JSON body" })
+      };
+    }
 
-    if (!idea) {
+    const idea = body.idea;
+
+    if (!idea || typeof idea !== "string") {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: "Missing idea" })
       };
     }
 
-    // Chiamata OpenAI
-const apiKey = process.env.OPENAI_API_KEY;
+    // 🔑 API KEY
+    const apiKey = process.env.OPENAI_API_KEY;
 
-console.log("KEY START:", process.env.OPENAI_API_KEY?.slice(0, 8));
+    console.log("OPENAI KEY STATUS:", apiKey ? "LOADED" : "MISSING");
 
-if (!apiKey) {
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: "Missing OPENAI_API_KEY in environment variables"
-    })
-  };
-}
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "OPENAI_API_KEY not loaded in environment variables"
+        })
+      };
+    }
 
-if (!apiKey) {
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: "Missing OPENAI_API_KEY in environment variables"
-    })
-  };
-}
-
-const response = await fetch("https://api.openai.com/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${apiKey}`
-  },
-  body: JSON.stringify({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: "Sei TaxCopilot. Analizzi idee e trovi opportunità fiscali in italiano."
+    // 🤖 CHIAMATA OPENAI
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
       },
-      {
-        role: "user",
-        content: idea
-      }
-    ]
-  })
-});
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Sei TaxCopilot. Analizzi idee imprenditoriali e suggerisci opportunità fiscali e business in modo chiaro in italiano."
+          },
+          {
+            role: "user",
+            content: idea
+          }
+        ],
+        temperature: 0.7
+      })
+    });
 
     const data = await response.json();
 
-    // Debug errore OpenAI vero (fondamentale)
+    // ❌ Errore OpenAI
     if (!response.ok) {
-  return {
-    statusCode: 500,
-    body: JSON.stringify(data)
-  };
-}
+      console.log("OpenAI ERROR:", data);
+
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({
+          error: "OpenAI API error",
+          details: data
+        })
+      };
+    }
 
     const result = data?.choices?.[0]?.message?.content;
 
@@ -86,6 +92,7 @@ const response = await fetch("https://api.openai.com/v1/chat/completions", {
       };
     }
 
+    // ✅ SUCCESSO
     return {
       statusCode: 200,
       headers: {
@@ -98,6 +105,8 @@ const response = await fetch("https://api.openai.com/v1/chat/completions", {
     };
 
   } catch (err) {
+    console.log("FUNCTION ERROR:", err);
+
     return {
       statusCode: 500,
       headers: {
