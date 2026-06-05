@@ -104,9 +104,11 @@ async function runAI() {
     const data = await response.json();
 
     if (data.error) {
-      output.innerText = "Errore API:\n\n" + JSON.stringify(data.error, null, 2);
-      return;
-    }
+  output.innerText =
+    "Errore API:\n\n" +
+    JSON.stringify(data, null, 2);
+  return;
+}
 
     output.innerText = data.result || "Nessuna risposta";
 
