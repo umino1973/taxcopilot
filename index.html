@@ -91,15 +91,15 @@ async function runAI() {
   try {
 
     const response = await fetch(
-      "https://calcolotasselavoratorioccasionali.netlify.app/.netlify/functions/ai",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ idea })
-      }
-    );
+  "/.netlify/functions/ai",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ idea })
+  }
+);
 
     const data = await response.json();
 
