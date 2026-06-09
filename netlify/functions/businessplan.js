@@ -1,3 +1,5 @@
+import { BANDI_DB } from "./bandiDB.js";
+
 exports.handler = async (event) => {
   try {
 
@@ -5,62 +7,75 @@ exports.handler = async (event) => {
       return { statusCode: 405, body: "Method Not Allowed" };
     }
 
-    const body = JSON.parse(event.body || "{}");
+    const { idea, sector, stage, region, capital } = JSON.parse(event.body || "{}");
 
-    const { idea, sector, stage, region, capital } = body;
+    const text = `${idea} ${sector}`.toLowerCase();
+
+    // =========================
+    // 🔎 MATCHING ENGINE
+    // =========================
+
+    let matches = [];
+
+    for (const b of BANDI_DB) {
+
+      let score = 0;
+
+      // settore match
+      if (b.sectors.some(s => text.includes(s))) score += 40;
+
+      // stage match
+      if (b.stage === stage) score += 30;
+
+      // region match
+      if (b.region === region.toLowerCase() || b.region === "italy") score += 20;
+
+      // AI bonus (semplice keyword AI)
+      if (text.includes("ai") || text.includes("intelligenza")) score += 10;
+
+      if (score > 20) {
+        matches.push({
+          ...b,
+          compatibility_score: score,
+          success_probability:
+            score > 70 ? "high" : score > 40 ? "medium" : "low"
+        });
+      }
+    }
+
+    // ordina
+    matches.sort((a, b) => b.compatibility_score - a.compatibility_score);
+
+    const top = matches.slice(0, 5);
+
+    // =========================
+    // 💰 FUNDING ESTIMATE REALISTICO
+    // =========================
+
+    let max = top.length > 0
+      ? Math.max(...top.map(m => m.max_amount))
+      : 30000;
+
+    let multiplier = stage === "idea" ? 0.3 : stage === "mvp" ? 0.6 : 1;
+
+    let conservative = Math.round(max * 0.1 * multiplier);
+    let realistic = Math.round(max * 0.25 * multiplier);
+    let optimistic = Math.round(max * 0.5 * multiplier);
+
+    // fallback
+    let fallback = {
+      bootstrap: Math.round(capital * 2),
+      bank_loans: Math.round(capital * 5),
+      microcredit: Math.round(capital * 3)
+    };
+
+    // =========================
+    // BUSINESS SUMMARY (AI SOLO QUI)
+    // =========================
 
     const apiKey = process.env.OPENAI_API_KEY;
 
-    const prompt = `
-SEI UN FUNDING INTELLIGENCE ENGINE.
-
-OUTPUT SOLO JSON VALIDO.
-
-IDEA:
-${idea}
-
-SETTORE:
-${sector}
-
-STAGE:
-${stage}
-
-REGIONE:
-${region}
-
-CAPITALE:
-${capital}
-
-REGOLE:
-- usa solo bandi reali UE/Italia
-- se non ci sono bandi → fallback finanziario
-- NON inventare numeri falsi
-
-OUTPUT:
-
-{
-  "business_summary": "",
-  "funding_opportunities": [
-    {
-      "name": "",
-      "entity": "",
-      "link": "",
-      "compatibility_score": 0,
-      "success_probability": "low|medium|high",
-      "reason": ""
-    }
-  ],
-  "funding_estimate": {
-    "conservative": 0,
-    "realistic": 0,
-    "optimistic": 0
-  },
-  "overall_score": 0,
-  "next_action": ""
-}
-`;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const ai = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -69,16 +84,24 @@ OUTPUT:
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "Sei un incubatore finanziario europeo specializzato in funding startup." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.4
+          {
+            role: "system",
+            content: "Sei un incubatore startup sintetico e pragmatico."
+          },
+          {
+            role: "user",
+            content: `Riassumi questa idea: ${idea}`
+          }
+        ]
       })
     });
 
-    const data = await response.json();
+    const aiData = await ai.json();
+    const summary = aiData?.choices?.[0]?.message?.content;
 
-    const result = data?.choices?.[0]?.message?.content;
+    // =========================
+    // OUTPUT
+    // =========================
 
     return {
       statusCode: 200,
@@ -86,7 +109,22 @@ OUTPUT:
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({ result })
+      body: JSON.stringify({
+        business_summary: summary,
+        funding_opportunities: top,
+        funding_estimate: {
+          conservative,
+          realistic,
+          optimistic
+        },
+        fallback_financing: fallback,
+        overall_score: top.length
+          ? Math.round(top[0].compatibility_score)
+          : 10,
+        next_action: top.length
+          ? `Candidati a: ${top[0].name}`
+          : "Valida meglio il settore e ripeti analisi"
+      })
     };
 
   } catch (err) {
