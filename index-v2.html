@@ -3,102 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TaxCopilot | Business Plan Generator</title>
+<title>TaxCopilot V6 - Funding Intelligence</title>
 
 <style>
-body{
-    font-family: Arial, sans-serif;
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-    background: #f7f7f7;
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0b1220;
+  color: white;
 }
 
-h1{
-    text-align: center;
+.container {
+  display: flex;
 }
 
-.card{
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+.sidebar {
+  width: 260px;
+  background: #111827;
+  height: 100vh;
+  padding: 20px;
 }
 
-input, textarea, select{
-    width: 100%;
-    padding: 12px;
-    margin-top: 8px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 14px;
+.main {
+  flex: 1;
+  padding: 30px;
 }
 
-button{
-    width: 100%;
-    padding: 14px;
-    background: black;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 6px;
+  border: none;
 }
 
-button:hover{
-    opacity: 0.9;
+textarea { height: 120px; }
+
+button {
+  background: #38bdf8;
+  border: none;
+  padding: 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 6px;
 }
 
-#result{
-    margin-top: 20px;
-    white-space: pre-wrap;
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
+.output {
+  margin-top: 20px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+}
+
+.badge {
+  background: #22c55e;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>TaxCopilot V2 – Business Plan Generator</h1>
+<div class="container">
 
-<div class="card">
+  <div class="sidebar">
+    <h2 style="color:#38bdf8">🚀 TaxCopilot V6</h2>
+    <p>Funding Intelligence Engine</p>
+    <hr>
+    <p>✔ Business Analysis</p>
+    <p>✔ Bandi Matching</p>
+    <p>✔ Funding Estimate</p>
+    <p>✔ Probability Score</p>
+  </div>
 
-<input id="projectName" placeholder="Nome progetto">
+  <div class="main">
 
-<textarea id="idea" rows="6" placeholder="Descrivi la tua idea imprenditoriale"></textarea>
+    <h1>Trova finanziamenti per la tua idea</h1>
 
-<select id="sector">
-<option>AI</option>
-<option>Marketplace</option>
-<option>Welfare</option>
-<option>Servizi</option>
-<option>E-commerce</option>
-<option>Altro</option>
-</select>
+    <label>Idea</label>
+    <textarea id="idea"></textarea>
 
-<select id="stage">
-<option>Idea</option>
-<option>MVP</option>
-<option>Startup avviata</option>
-</select>
+    <label>Settore</label>
+    <input id="sector">
 
-<select id="budget">
-<option value="<25k">Meno di 25.000 €</option>
-<option value="25-100k">25.000 - 100.000 €</option>
-<option value="100-500k">100.000 - 500.000 €</option>
-<option value=">500k">Più di 500.000 €</option>
-</select>
+    <label>Stadio</label>
+    <select id="stage">
+      <option>idea</option>
+      <option>mvp</option>
+      <option>startup</option>
+    </select>
 
-<input id="region" placeholder="Regione (es. Lombardia)">
+    <label>Regione</label>
+    <input id="region">
 
-<button onclick="generate()">Genera Business Plan</button>
+    <label>Capitale disponibile (€)</label>
+    <input id="capital" type="number">
 
+    <button onclick="generateFunding()">Analizza finanziamenti</button>
+
+    <div class="output" id="output"></div>
+
+  </div>
 </div>
-
-<div id="result"></div>
 
 <script src="app-v2.js"></script>
 
