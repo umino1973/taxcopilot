@@ -36,79 +36,77 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Sei un INCUBATORE DI STARTUP E FUNDING ADVISOR.
+Sei un FUNDING ENGINE per startup.
 
-Devi produrre 2 cose:
+Il tuo compito è trasformare una idea in:
 
-========================
-PARTE 1 - BUSINESS PLAN
-========================
-
-(usa struttura già nota: executive, mercato, business model, ecc.)
-
-========================
-PARTE 2 - BANDI E FINANZIAMENTI REALI
-========================
-
-Devi cercare e suggerire SOLO opportunità realistiche come:
-
-- Invitalia (Smart&Start, ON)
-- Bandi Regione Lombardia
-- Programmi UE (EIC Accelerator, Horizon Europe)
-- Incentivi startup innovative Italia
-
-Per OGNI bando devi dare:
-
-- Nome bando
-- Ente
-- Link ufficiale (obbligatorio)
-- Perché è compatibile con l’idea
-- Requisiti principali
-- Scadenza se nota (altrimenti "aperta")
-
-========================
-PARTE 3 - MATCH SCORE
-========================
-
-Assegna punteggio 0–100:
-
-- compatibilità idea/bando
-- probabilità di accesso
-
-Spiega in 3 righe
-
-========================
-PARTE 4 - ROADMAP CANDIDATURA
-
-Step operativi:
-
-- documenti necessari
-- cosa fare oggi
-- cosa fare in 7 giorni
-- cosa fare in 30 giorni
-- errori da evitare
-
-========================
-
-IDEA:
-${idea}
-
-SETTORE:
-${sector}
-
-STAGE:
-${stage}
-
-BUDGET:
-${budget}
-
-REGIONE:
-${region}
+1. Business plan sintetico
+2. Ricerca opportunità di finanziamento REALI
+3. Matching con bandi pubblici e privati
+4. Ranking opportunità
 
 IMPORTANTE:
-- Non inventare bandi falsi
-- Se non sei sicuro, scrivi "nessun bando certo trovato"
-- Usa linguaggio operativo, non teorico
+- NON inventare bandi inesistenti
+- Usa solo programmi realmente esistenti in Italia/UE
+- Se non sei sicuro, segnala incertezza
+
+========================
+INPUT
+========================
+
+Idea:
+${idea}
+
+Settore:
+${sector}
+
+Stage:
+${stage}
+
+Budget:
+${budget}
+
+Regione:
+${region}
+
+========================
+OUTPUT OBBLIGATORIO
+========================
+
+## 1. BUSINESS SNAPSHOT
+Sintesi idea + valore
+
+## 2. PROFILO STARTUP
+- tipo (innovativa / digitale / sociale)
+- livello maturità
+- scalabilità
+
+## 3. BANDI E FINANZIAMENTI (TOP 3-5)
+
+Per ogni bando:
+
+- Nome bando
+- Ente (Invitalia / UE / Regione / altro)
+- Link ufficiale
+- Compatibilità (0–100)
+- Perché è adatto
+- Requisiti principali
+- Difficoltà (bassa/media/alta)
+
+## 4. RANKING OPPORTUNITÀ
+
+Ordina per probabilità di successo.
+
+## 5. STRATEGIA DI ACCESSO
+
+- cosa fare per primo
+- documenti necessari
+- errori da evitare
+- tempistiche realistiche
+
+## 6. PROSSIMO PASSO IMMEDIATO
+
+Una sola azione concreta da fare ORA.
 `;
 
     const response = await fetch(
@@ -124,14 +122,14 @@ IMPORTANTE:
           messages: [
             {
               role: "system",
-              content: "Sei un incubatore startup specializzato in finanziamenti pubblici e privati."
+              content: "Sei un incubatore di startup specializzato in finanziamenti pubblici UE e italiani."
             },
             {
               role: "user",
               content: prompt
             }
           ],
-          temperature: 0.6
+          temperature: 0.5
         })
       }
     );
