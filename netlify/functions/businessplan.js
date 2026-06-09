@@ -1,7 +1,7 @@
 exports.handler = async (event) => {
   try {
 
-    console.log("V8.1 INCUBATOR STARTED");
+    console.log("V9 REAL INCUBATOR STARTED");
 
     if (event.httpMethod !== "POST") {
       return {
@@ -17,20 +17,20 @@ exports.handler = async (event) => {
     const text = `${idea} ${sector}`.toLowerCase();
 
     // =========================
-    // 📦 BANDI V8.1 (REALISTIC RULES)
+    // 📦 BANDI V9 (REAL STRUCTURE)
     // =========================
 
     const BANDI_DB = [
       {
         name: "Smart&Start Italia",
         entity: "Invitalia",
-        link: "https://www.invitalia.it/cosa-facciamo/creiamo-nuove-aziende/smartstart-italia",
+        link: "https://www.invitalia.it",
         sectors: ["ai", "tech", "digital", "servizi"],
         stages: ["idea", "mvp", "startup"],
         regions: ["italy"],
         min_capital: 0,
         max_capital: 1500000,
-        base_coverage: 0.8
+        coverage: 0.8
       },
       {
         name: "Horizon Europe - EIC Accelerator",
@@ -41,7 +41,7 @@ exports.handler = async (event) => {
         regions: ["eu"],
         min_capital: 0,
         max_capital: 9999999,
-        base_coverage: 0.7
+        coverage: 0.7
       },
       {
         name: "Fondo Lombardia Start",
@@ -52,81 +52,96 @@ exports.handler = async (event) => {
         regions: ["lombardia"],
         min_capital: 5000,
         max_capital: 100000,
-        base_coverage: 0.5
+        coverage: 0.5
       }
     ];
 
     // =========================
-    // 🎯 REAL SCORING ENGINE (NO FAKE 100%)
+    // 🎯 ENGINE V9 (REAL DECISION LOGIC)
     // =========================
 
-    let results = [];
+    const results = [];
 
     for (const b of BANDI_DB) {
 
-      const sectorMatch = b.sectors.some(s => text.includes(s));
-      const stageMatch = b.stages.includes(stage);
-      const regionMatch = b.regions.includes(region.toLowerCase());
-      const capitalMatch = cap >= b.min_capital && cap <= b.max_capital;
+      const checks = {
+        sector: b.sectors.some(s => text.includes(s)),
+        stage: b.stages.includes(stage),
+        region: b.regions.includes(region.toLowerCase()),
+        capital: cap >= b.min_capital && cap <= b.max_capital
+      };
 
-      // ❌ hard exclusion
-      if (!sectorMatch && !stageMatch && !regionMatch) continue;
+      const passed = Object.values(checks).filter(Boolean).length;
 
-      // 📊 realistic scoring (0–100)
-      let score = 0;
+      // score realistico (NON lineare perfetto)
+      let score =
+        (checks.sector ? 30 : 0) +
+        (checks.stage ? 25 : 0) +
+        (checks.region ? 25 : 0) +
+        (checks.capital ? 20 : 0);
 
-      if (sectorMatch) score += 35;
-      if (stageMatch) score += 25;
-      if (regionMatch) score += 25;
-      if (capitalMatch) score += 15;
-
-      // 📉 penalità realismo
-      if (!capitalMatch) score -= 10;
+      // penalità realismo
+      if (!checks.sector) score -= 15;
+      if (!checks.capital) score -= 10;
 
       score = Math.max(0, Math.min(100, score));
 
-      // 🎯 eligibility threshold reale
-      const eligible = score >= 45;
+      // classificazione V9
+      let status =
+        passed === 4 ? "ELIGIBLE" :
+        passed >= 2 ? "PARTIAL_MATCH" :
+        "EXCLUDED";
 
-      if (!eligible) continue;
-
-      // 📈 probability REALISTIC
+      // probabilità REALISTICA
       let probability =
         score >= 75 ? "high" :
-        score >= 55 ? "medium" :
+        score >= 50 ? "medium" :
         "low";
+
+      // motivazioni vere
+      const reasons = [];
+
+      if (!checks.sector) reasons.push("settore non perfettamente coerente");
+      if (!checks.stage) reasons.push("fase aziendale non idonea");
+      if (!checks.region) reasons.push("regione non compatibile");
+      if (!checks.capital) reasons.push("capitale fuori range richiesto");
 
       results.push({
         name: b.name,
         entity: b.entity,
         link: b.link,
         score,
+        status,
         probability,
-        eligible: true,
-        coverage: b.base_coverage,
-        reason: "Requisiti compatibili con il profilo inserito"
+        checks,
+        reasons: reasons.length ? reasons : ["Tutti i requisiti rispettati"],
+        coverage: b.coverage
       });
     }
 
-    // sort best first
-    results.sort((a, b) => b.score - a.score);
+    // separazione V9 reale
+    const eligible = results.filter(r => r.status === "ELIGIBLE");
+    const partial = results.filter(r => r.status === "PARTIAL_MATCH");
+    const excluded = results.filter(r => r.status === "EXCLUDED");
 
-    const top = results.slice(0, 5);
+    eligible.sort((a, b) => b.score - a.score);
+
+    const top = eligible.slice(0, 5);
 
     // =========================
-    // 💰 FUNDING ESTIMATE REALISTIC
+    // 💰 FUNDING ESTIMATE V9
     // =========================
 
     const maxFund = top.length
       ? Math.max(...top.map(b => b.coverage * 500000))
       : 25000;
 
-    const conservative = Math.round(maxFund * 0.2);
-    const realistic = Math.round(maxFund * 0.4);
-    const optimistic = Math.round(maxFund * 0.65);
+    const conservative = Math.round(maxFund * 0.25);
+    const realistic = Math.round(maxFund * 0.45);
+    const optimistic = Math.round(maxFund * 0.7);
 
     // =========================
-    // 🚀 RESPONSE CLEAN (NO UNDEFINED)
+    // 🚀 RESPONSE V9
     // =========================
 
     return {
@@ -136,22 +151,30 @@ exports.handler = async (event) => {
         "Access-Control-Allow-Origin": "*"
       },
       body: JSON.stringify({
-        business_summary: `Analisi incubatore V8.1 per ${sector}`,
+        business_summary: `Analisi V9 incubatore per ${sector}`,
+
+        eligible,
+        partial,
+        excluded,
+
         funding_opportunities: top,
+
         funding_estimate: {
           conservative,
           realistic,
           optimistic
         },
+
         overall_score: top.length ? top[0].score : 10,
+
         next_action: top.length
-          ? `Candidati a ${top[0].name}`
-          : "Nessun bando compatibile: migliora idea o capitale"
+          ? `Procedi con candidatura a ${top[0].name}`
+          : "Nessun bando idoneo: modifica regione o fase startup"
       })
     };
 
   } catch (err) {
-    console.log("V8.1 ERROR:", err);
+    console.log("V9 ERROR:", err);
 
     return {
       statusCode: 500,
