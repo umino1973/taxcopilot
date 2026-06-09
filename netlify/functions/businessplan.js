@@ -1,7 +1,9 @@
-exports.handler = async (event) => {
-  try {
+// netlify/functions/businessplan.js
 
-    console.log("V9 REAL INCUBATOR STARTED");
+exports.handler = async (event) => {
+  console.log("V10 FUNCTION START");
+
+  try {
 
     if (event.httpMethod !== "POST") {
       return {
@@ -10,17 +12,21 @@ exports.handler = async (event) => {
       };
     }
 
-    const { idea, sector, stage, region, capital } =
-      JSON.parse(event.body || "{}");
+    const body = JSON.parse(event.body || "{}");
 
-    const cap = Number(capital || 0);
-    const text = `${idea} ${sector}`.toLowerCase();
+    const idea = body.idea || "";
+    const sector = body.sector || "";
+    const stage = body.stage || "";
+    const region = body.region || "";
+    const capital = Number(body.capital || 0);
+
+    const text = (idea + " " + sector).toLowerCase();
 
     // =========================
-    // 📦 BANDI V9 (REAL STRUCTURE)
+    // 📦 BANDI DATABASE
     // =========================
 
-    const BANDI_DB = [
+    const BANDI = [
       {
         name: "Smart&Start Italia",
         entity: "Invitalia",
@@ -30,18 +36,12 @@ exports.handler = async (event) => {
         regions: ["italy"],
         min_capital: 0,
         max_capital: 1500000,
-        coverage: 0.8
-      },
-      {
-        name: "Horizon Europe - EIC Accelerator",
-        entity: "European Commission",
-        link: "https://eic.ec.europa.eu",
-        sectors: ["ai", "deeptech", "innovation"],
-        stages: ["startup"],
-        regions: ["eu"],
-        min_capital: 0,
-        max_capital: 9999999,
-        coverage: 0.7
+        coverage: 0.8,
+        requirements: [
+          "Startup innovativa",
+          "Sede in Italia",
+          "Progetto innovativo"
+        ]
       },
       {
         name: "Fondo Lombardia Start",
@@ -52,59 +52,77 @@ exports.handler = async (event) => {
         regions: ["lombardia"],
         min_capital: 5000,
         max_capital: 100000,
-        coverage: 0.5
+        coverage: 0.5,
+        requirements: [
+          "Sede Lombardia",
+          "Early stage",
+          "PMI o startup"
+        ]
+      },
+      {
+        name: "Horizon Europe",
+        entity: "European Commission",
+        link: "https://eic.ec.europa.eu",
+        sectors: ["ai", "deeptech"],
+        stages: ["startup"],
+        regions: ["eu"],
+        min_capital: 0,
+        max_capital: 9999999,
+        coverage: 0.7,
+        requirements: [
+          "Scalabilità UE",
+          "Innovazione profonda",
+          "Team strutturato"
+        ]
       }
     ];
 
     // =========================
-    // 🎯 ENGINE V9 (REAL DECISION LOGIC)
+    // 🎯 ENGINE V10
     // =========================
 
     const results = [];
 
-    for (const b of BANDI_DB) {
+    for (const b of BANDI) {
 
       const checks = {
         sector: b.sectors.some(s => text.includes(s)),
         stage: b.stages.includes(stage),
         region: b.regions.includes(region.toLowerCase()),
-        capital: cap >= b.min_capital && cap <= b.max_capital
+        capital: capital >= b.min_capital && capital <= b.max_capital
       };
 
       const passed = Object.values(checks).filter(Boolean).length;
 
-      // score realistico (NON lineare perfetto)
       let score =
         (checks.sector ? 30 : 0) +
         (checks.stage ? 25 : 0) +
         (checks.region ? 25 : 0) +
         (checks.capital ? 20 : 0);
 
-      // penalità realismo
-      if (!checks.sector) score -= 15;
-      if (!checks.capital) score -= 10;
-
       score = Math.max(0, Math.min(100, score));
 
-      // classificazione V9
       let status =
         passed === 4 ? "ELIGIBLE" :
-        passed >= 2 ? "PARTIAL_MATCH" :
+        passed >= 2 ? "PARTIAL" :
         "EXCLUDED";
 
-      // probabilità REALISTICA
       let probability =
         score >= 75 ? "high" :
         score >= 50 ? "medium" :
         "low";
 
-      // motivazioni vere
-      const reasons = [];
+      const missing = [];
 
-      if (!checks.sector) reasons.push("settore non perfettamente coerente");
-      if (!checks.stage) reasons.push("fase aziendale non idonea");
-      if (!checks.region) reasons.push("regione non compatibile");
-      if (!checks.capital) reasons.push("capitale fuori range richiesto");
+      if (!checks.sector) missing.push("Settore non coerente");
+      if (!checks.stage) missing.push("Fase non idonea");
+      if (!checks.region) missing.push("Regione non valida");
+      if (!checks.capital) missing.push("Capitale non compatibile");
+
+      const upgrade_path =
+        status === "ELIGIBLE"
+          ? ["Preparare business plan", "Raccogliere documenti", "Inviare candidatura"]
+          : ["Adattare progetto al bando", "Colmare requisiti mancanti", "Rivalutare strategia"];
 
       results.push({
         name: b.name,
@@ -113,15 +131,15 @@ exports.handler = async (event) => {
         score,
         status,
         probability,
-        checks,
-        reasons: reasons.length ? reasons : ["Tutti i requisiti rispettati"],
+        requirements: b.requirements,
+        missing,
+        upgrade_path,
         coverage: b.coverage
       });
     }
 
-    // separazione V9 reale
     const eligible = results.filter(r => r.status === "ELIGIBLE");
-    const partial = results.filter(r => r.status === "PARTIAL_MATCH");
+    const partial = results.filter(r => r.status === "PARTIAL");
     const excluded = results.filter(r => r.status === "EXCLUDED");
 
     eligible.sort((a, b) => b.score - a.score);
@@ -129,19 +147,19 @@ exports.handler = async (event) => {
     const top = eligible.slice(0, 5);
 
     // =========================
-    // 💰 FUNDING ESTIMATE V9
+    // 💰 FUNDING ESTIMATE
     // =========================
 
     const maxFund = top.length
       ? Math.max(...top.map(b => b.coverage * 500000))
-      : 25000;
+      : 20000;
 
-    const conservative = Math.round(maxFund * 0.25);
-    const realistic = Math.round(maxFund * 0.45);
-    const optimistic = Math.round(maxFund * 0.7);
+    const conservative = Math.round(maxFund * 0.3);
+    const realistic = Math.round(maxFund * 0.5);
+    const optimistic = Math.round(maxFund * 0.75);
 
     // =========================
-    // 🚀 RESPONSE V9
+    // 🚀 RESPONSE SAFE
     // =========================
 
     return {
@@ -151,7 +169,7 @@ exports.handler = async (event) => {
         "Access-Control-Allow-Origin": "*"
       },
       body: JSON.stringify({
-        business_summary: `Analisi V9 incubatore per ${sector}`,
+        business_summary: `Analisi V10 per ${sector}`,
 
         eligible,
         partial,
@@ -168,17 +186,20 @@ exports.handler = async (event) => {
         overall_score: top.length ? top[0].score : 10,
 
         next_action: top.length
-          ? `Procedi con candidatura a ${top[0].name}`
-          : "Nessun bando idoneo: modifica regione o fase startup"
+          ? `Procedi con ${top[0].name}`
+          : "Nessun bando idoneo: rivedere strategia"
       })
     };
 
   } catch (err) {
-    console.log("V9 ERROR:", err);
+
+    console.log("V10 ERROR:", err);
 
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({
+        error: err.message || "Unknown error"
+      })
     };
   }
 };
