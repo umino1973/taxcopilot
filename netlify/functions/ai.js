@@ -1,80 +1,100 @@
 exports.handler = async (event) => {
   try {
-    // 🔒 Solo POST
+
+    // Solo POST
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
-        body: JSON.stringify({ error: "Method Not Allowed" })
+        body: JSON.stringify({
+          error: "Method Not Allowed"
+        })
       };
     }
 
-    // 📦 Parse body
+    // Parse body
     let body;
     try {
-      body = event.body ? JSON.parse(event.body) : {};
+      body = JSON.parse(event.body || "{}");
     } catch (e) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Invalid JSON body" })
+        body: JSON.stringify({
+          error: "Invalid JSON"
+        })
       };
     }
 
     const idea = body.idea;
 
-    if (!idea || typeof idea !== "string") {
+    if (!idea) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Missing idea" })
+        body: JSON.stringify({
+          error: "Missing idea"
+        })
       };
     }
 
-    // 🔑 API KEY
     const apiKey = process.env.OPENAI_API_KEY;
-
-    console.log("OPENAI KEY STATUS:", apiKey ? "LOADED" : "MISSING");
 
     if (!apiKey) {
       return {
         statusCode: 500,
         body: JSON.stringify({
-          error: "OPENAI_API_KEY not loaded in environment variables"
+          error: "OPENAI_API_KEY missing"
         })
       };
     }
 
-    // 🤖 CHIAMATA OPENAI
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "Sei TaxCopilot. Analizzi idee imprenditoriali e suggerisci opportunità fiscali e business in modo chiaro in italiano."
-          },
-          {
-            role: "user",
-            content: idea
-          }
-        ],
-        temperature: 0.7
-      })
-    });
+    const prompt = `
+Sei TaxCopilot, un incubatore digitale.
+
+Analizza l'idea imprenditoriale e restituisci:
+
+1. Analisi dell'idea
+2. Punti di forza
+3. Criticità
+4. Opportunità di mercato
+5. Tipologia di business
+6. Prime possibili fonti di finanziamento
+7. Suggerimento operativo concreto
+
+Idea:
+${idea}
+`;
+
+    const response = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "Sei TaxCopilot, incubatore startup e business advisor."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7
+        })
+      }
+    );
 
     const data = await response.json();
 
-    // ❌ Errore OpenAI
     if (!response.ok) {
-      console.log("OpenAI ERROR:", data);
-
       return {
-        statusCode: response.status,
+        statusCode: 500,
         body: JSON.stringify({
-          error: "OpenAI API error",
+          error: "OpenAI error",
           details: data
         })
       };
@@ -82,17 +102,6 @@ exports.handler = async (event) => {
 
     const result = data?.choices?.[0]?.message?.content;
 
-    if (!result) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Empty response from OpenAI",
-          raw: data
-        })
-      };
-    }
-
-    // ✅ SUCCESSO
     return {
       statusCode: 200,
       headers: {
@@ -100,13 +109,11 @@ exports.handler = async (event) => {
         "Access-Control-Allow-Origin": "*"
       },
       body: JSON.stringify({
-        result
+        result: result || "Nessuna risposta"
       })
     };
 
   } catch (err) {
-    console.log("FUNCTION ERROR:", err);
-
     return {
       statusCode: 500,
       headers: {
