@@ -1,17 +1,13 @@
 exports.handler = async (event) => {
   try {
 
-    // Solo POST
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
-        body: JSON.stringify({
-          error: "Method Not Allowed"
-        })
+        body: JSON.stringify({ error: "Method Not Allowed" })
       };
     }
 
-    // Parse body
     const body = JSON.parse(event.body || "{}");
 
     const {
@@ -26,149 +22,93 @@ exports.handler = async (event) => {
     if (!idea) {
       return {
         statusCode: 400,
-        body: JSON.stringify({
-          error: "Descrizione progetto mancante"
-        })
+        body: JSON.stringify({ error: "Missing idea" })
       };
     }
 
-    // API Key
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
       return {
         statusCode: 500,
-        body: JSON.stringify({
-          error: "OPENAI_API_KEY non trovata"
-        })
+        body: JSON.stringify({ error: "Missing API key" })
       };
     }
 
     const prompt = `
-Genera un BUSINESS PLAN PROFESSIONALE COMPLETO in italiano.
+Sei un INCUBATORE DI STARTUP E FUNDING ADVISOR.
 
-DATI DEL PROGETTO
+Devi produrre 2 cose:
 
-Nome progetto:
-${projectName}
+========================
+PARTE 1 - BUSINESS PLAN
+========================
 
-Descrizione idea:
+(usa struttura già nota: executive, mercato, business model, ecc.)
+
+========================
+PARTE 2 - BANDI E FINANZIAMENTI REALI
+========================
+
+Devi cercare e suggerire SOLO opportunità realistiche come:
+
+- Invitalia (Smart&Start, ON)
+- Bandi Regione Lombardia
+- Programmi UE (EIC Accelerator, Horizon Europe)
+- Incentivi startup innovative Italia
+
+Per OGNI bando devi dare:
+
+- Nome bando
+- Ente
+- Link ufficiale (obbligatorio)
+- Perché è compatibile con l’idea
+- Requisiti principali
+- Scadenza se nota (altrimenti "aperta")
+
+========================
+PARTE 3 - MATCH SCORE
+========================
+
+Assegna punteggio 0–100:
+
+- compatibilità idea/bando
+- probabilità di accesso
+
+Spiega in 3 righe
+
+========================
+PARTE 4 - ROADMAP CANDIDATURA
+
+Step operativi:
+
+- documenti necessari
+- cosa fare oggi
+- cosa fare in 7 giorni
+- cosa fare in 30 giorni
+- errori da evitare
+
+========================
+
+IDEA:
 ${idea}
 
-Settore:
+SETTORE:
 ${sector}
 
-Fase progetto:
+STAGE:
 ${stage}
 
-Budget indicativo:
+BUDGET:
 ${budget}
 
-Regione:
+REGIONE:
 ${region}
 
 IMPORTANTE:
-
-Non limitarti a descrivere l'idea.
-
-Comportati come:
-- incubatore startup
-- advisor per finanziamenti
-- consulente business plan
-
-Genera SEMPRE le seguenti sezioni.
-
-# 1. EXECUTIVE SUMMARY
-Sintesi professionale del progetto.
-
-# 2. PROBLEMA
-Quale problema risolve e perché è rilevante.
-
-# 3. SOLUZIONE
-Descrizione dettagliata della soluzione proposta.
-
-# 4. ANALISI DEL MERCATO
-- clienti target
-- dimensione potenziale
-- trend di mercato
-- opportunità
-
-# 5. ANALISI COMPETITIVA
-- competitor diretti
-- competitor indiretti
-- vantaggi competitivi
-
-# 6. MODELLO DI BUSINESS
-- come genera ricavi
-- flussi di entrata
-- strategia prezzi
-
-# 7. TEAM IDEALE
-Indica le figure professionali necessarie.
-
-# 8. PIANO OPERATIVO
-Piano dei primi 12 mesi.
-
-# 9. BUDGET DI AVVIO
-Fornisci una tabella con stime realistiche.
-
-Includi:
-- sviluppo
-- marketing
-- amministrazione
-- legale
-- personale
-- altri costi
-
-e totale finale.
-
-# 10. FABBISOGNO FINANZIARIO
-Indica:
-- capitale minimo
-- capitale consigliato
-- liquidità iniziale
-
-# 11. FONTI DI FINANZIAMENTO POTENZIALI
-
-Valuta:
-- contributi pubblici
-- finanziamenti agevolati
-- investitori
-- crowdfunding
-- incubatori
-
-Per ogni fonte spiega perché potrebbe essere adatta.
-
-# 12. VALUTAZIONE DELLA FINANZIABILITÀ
-
-Assegna un punteggio da 0 a 100 a:
-
-- innovazione
-- scalabilità
-- sostenibilità economica
-- finanziabilità
-
-Spiega il motivo.
-
-# 13. ROADMAP 12 MESI
-
-Dividi in:
-- mesi 1-3
-- mesi 4-6
-- mesi 7-9
-- mesi 10-12
-
-# 14. RISCHI PRINCIPALI
-
-Elenca i principali rischi e come ridurli.
-
-# 15. PROSSIMA AZIONE
-
-Concludi SEMPRE con:
-
-"AZIONE IMMEDIATA CONSIGLIATA"
-
-e indica la singola azione più importante da fare subito.
+- Non inventare bandi falsi
+- Se non sei sicuro, scrivi "nessun bando certo trovato"
+- Usa linguaggio operativo, non teorico
 `;
 
     const response = await fetch(
@@ -184,15 +124,14 @@ e indica la singola azione più importante da fare subito.
           messages: [
             {
               role: "system",
-              content:
-                "Sei TaxCopilot Business Planner. Sei un incubatore startup, advisor strategico e consulente per la pianificazione imprenditoriale."
+              content: "Sei un incubatore startup specializzato in finanziamenti pubblici e privati."
             },
             {
               role: "user",
               content: prompt
             }
           ],
-          temperature: 0.7
+          temperature: 0.6
         })
       }
     );
@@ -201,17 +140,12 @@ e indica la singola azione più importante da fare subito.
 
     if (!response.ok) {
       return {
-        statusCode: response.status,
-        body: JSON.stringify({
-          error: "OpenAI API error",
-          details: data
-        })
+        statusCode: 500,
+        body: JSON.stringify(data)
       };
     }
 
-    const result =
-      data?.choices?.[0]?.message?.content ||
-      "Nessun risultato generato";
+    const result = data?.choices?.[0]?.message?.content;
 
     return {
       statusCode: 200,
@@ -219,23 +153,17 @@ e indica la singola azione più importante da fare subito.
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({
-        result
-      })
+      body: JSON.stringify({ result })
     };
 
   } catch (err) {
-
     return {
       statusCode: 500,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({
-        error: err.message
-      })
+      body: JSON.stringify({ error: err.message })
     };
-
   }
 };
