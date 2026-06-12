@@ -30,17 +30,7 @@ const text = (idea + " " + sector).toLowerCase();
 // 📦 LOAD BANDI DATABASE
 // =========================
 
-const dbPath = path.join(
-  process.cwd(),
-  "data",
-  "bandi.json"
-);
-
-console.log("DATABASE PATH:", dbPath);
-
-const BANDI = JSON.parse(
-  fs.readFileSync(dbPath, "utf8")
-);
+const BANDI = require("../../data/bandi.json");
 
 console.log("BANDI LOADED:", BANDI.length);
 
