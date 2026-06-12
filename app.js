@@ -1,17 +1,10 @@
-console.log("APP JS CARICATO");
-
-async function run() {
-
-  console.log("RUN ATTIVATO");
+async function generateFunding() {
 
   const output = document.getElementById("output");
 
-  if (!output) {
-    alert("Output non trovato");
-    return;
-  }
-
-  output.innerHTML = "<div class='card'>⏳ Analisi AI in corso...</div>";
+  output.innerHTML = `
+    <div class="card">⏳ Analisi AI in corso...</div>
+  `;
 
   const idea = document.getElementById("idea").value;
   const sector = document.getElementById("sector").value;
@@ -33,38 +26,50 @@ async function run() {
       })
     });
 
-    console.log("STATUS:", res.status);
+    const data = await res.json();
 
-    const text = await res.text();
-    console.log("RAW RESPONSE:", text);
-
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      throw new Error("Risposta non JSON: " + text);
-    }
-
-    let html = "";
-
-    html += `<div class="card">
-      <h2>🏆 Miglior bando</h2>
-      <p>${data.best_match?.name || "Nessun dato"}</p>
-      <p>Score: ${data.best_match?.score || 0}</p>
-    </div>`;
-
-    html += `<div class="card">
-      <h3>Debug</h3>
-      <pre>${JSON.stringify(data, null, 2)}</pre>
-    </div>`;
-
-    output.innerHTML = html;
+    render(data);
 
   } catch (err) {
 
-    console.error(err);
-
-    output.innerHTML = `<div class="card">❌ Errore: ${err.message}</div>`;
+    output.innerHTML = `
+      <div class="card">❌ Errore: ${err.message}</div>
+    `;
   }
+}
+
+
+// =========================
+// 🧠 RENDER AI REPORT
+// =========================
+
+function render(data) {
+
+  const output = document.getElementById("output");
+  const ai = data.ai || {};
+
+  let html = "";
+
+  html += `<h2>🧠 AI Business Report</h2>`;
+  html += `<div class="card">${ai.summary || "Nessuna analisi disponibile"}</div>`;
+
+  html += `<h3>💪 Punti di forza</h3>`;
+  html += `<div class="card">${(ai.strengths || []).join("<br>")}</div>`;
+
+  html += `<h3>⚠️ Rischi</h3>`;
+  html += `<div class="card">${(ai.risks || []).join("<br>")}</div>`;
+
+  html += `<h3>📊 Business Score</h3>`;
+  html += `<div class="card">${ai.business_score || 0}/100</div>`;
+
+  html += `<h3>💰 Finanziamenti suggeriti</h3>`;
+  html += `<div class="card">${(ai.funding_suggestions || []).join("<br>")}</div>`;
+
+  html += `<h3>🚀 Prossimi step</h3>`;
+  html += `<div class="card">${(ai.next_steps || []).join("<br>")}</div>`;
+
+  html += `<h3>🧪 Debug</h3>`;
+  html += `<pre>${JSON.stringify(data.debug, null, 2)}</pre>`;
+
+  output.innerHTML = html;
 }
