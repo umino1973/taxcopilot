@@ -75,7 +75,15 @@ Non inventare numeri precisi, sii realistico.
         throw new Error("Invalid OpenAI response");
       }
 
-      aiResult = JSON.parse(data.choices[0].message.content);
+     let content = data.choices[0].message.content;
+
+// 🔥 PULIZIA MARKDOWN ```json ... ```
+content = content
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
+
+aiResult = JSON.parse(content);
 
     } catch (err) {
       console.log("OPENAI ERROR:", err.message);
