@@ -53,14 +53,6 @@ exports.handler = async (event) => {
       ];
     }
     
-console.log("BANDI CARICATI:", BANDI.length);
-
-return {
-  statusCode: 200,
-  body: JSON.stringify({
-    debug_bandi: BANDI
-  })
-};
     const text = `${idea} ${sector}`;
 
     function score(b) {
@@ -71,7 +63,7 @@ return {
       if (b.stages.includes(stage)) s += 20;
       if (capital >= b.min_capital && capital <= b.max_capital) s += 20;
 
-      const hits = (b.signals || []).filter(x => text.includes(x));
+      const hits = (b.sectors || []).filter(x => text.includes(x));
     if (hits.length === 0) {
   s -= 20;
 } else if (hits.length === 1) {
