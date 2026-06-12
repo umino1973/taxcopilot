@@ -52,7 +52,15 @@ exports.handler = async (event) => {
         }
       ];
     }
+    
+console.log("BANDI CARICATI:", BANDI.length);
 
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    debug_bandi: BANDI
+  })
+};
     const text = `${idea} ${sector}`;
 
     function score(b) {
