@@ -64,7 +64,15 @@ exports.handler = async (event) => {
       if (capital >= b.min_capital && capital <= b.max_capital) s += 20;
 
       const hits = (b.signals || []).filter(x => text.includes(x));
-      s += hits.length * 15;
+    if (hits.length === 0) {
+  s -= 20;
+} else if (hits.length === 1) {
+  s += 15;
+} else if (hits.length === 2) {
+  s += 25;
+} else {
+  s += 35;
+}
 
       return Math.min(100, s);
     }
